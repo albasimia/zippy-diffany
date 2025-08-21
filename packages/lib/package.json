@@ -1,0 +1,12 @@
+{
+  "name": "@zippy-diffany/lib",
+  "version": "1.0.0",
+  "main": "git-service.js",
+  "license": "MIT",
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "scripts": {
+    "test": "vitest"
+  }
+}

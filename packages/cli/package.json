@@ -1,0 +1,18 @@
+{
+  "name": "zippy-diffany",
+  "version": "1.0.0",
+  "description": "Zippy Diffany CLI - Git差分ZIP化ツール",
+  "main": "bin/zippy-diffany.js",
+  "bin": {
+    "zippy-diffany": "./bin/zippy-diffany.js"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "keywords": ["git", "diff", "zip", "cli"],
+  "license": "MIT",
+  "dependencies": {
+    "minimist": "^1.2.8"
+  }
+}
