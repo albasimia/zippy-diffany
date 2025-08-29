@@ -39,7 +39,20 @@ program
   .option('--force, -f', '既存のZIPを上書き')
   .action(async (commit1, commit2, options) => {
     const repoPath = options.repo ? path.resolve(options.repo) : process.cwd();
-    const zipIgnorePath = options.zipignore || path.join(repoPath, '.zipignore');
+
+
+    // デフォルトの .zipignore パス
+    const defaultZipIgnorePath = path.join(__dirname, 'assets', 'default.zipignore');
+
+    // 指定があれば使う、なければリポジトリ直下、なければ CLI 内のデフォルト
+    const zipIgnorePath = (() => {
+      if (options.zipignore && fs.existsSync(options.zipignore)) return options.zipignore;
+
+      const repoZipIgnore = path.join(repoPath, '.zipignore');
+      if (fs.existsSync(repoZipIgnore)) return repoZipIgnore;
+
+      return defaultZipIgnorePath;
+    })();
 
     const outputName = options.name || path.basename(repoPath);
     const outputPath = options.out || process.cwd();

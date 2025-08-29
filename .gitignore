@@ -66,3 +66,6 @@ node_modules/
 dist/
 build/
 out/
+
+# test
+packages/lib/test/mock/sample-repo
