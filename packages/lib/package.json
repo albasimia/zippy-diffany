@@ -1,7 +1,13 @@
 {
   "name": "@zippy-diffany/lib",
-  "version": "1.0.0",
-  "main": "git-service.js",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./git-service.js",
+  "exports": {
+    "./git-service": "./git-service.js",
+    "./createZipFromDiff": "./createZipFromDiff.js",
+    "./zipignore": "./zipignore.js"
+  },
   "license": "MIT",
   "devDependencies": {
     "vitest": "^1.0.0"

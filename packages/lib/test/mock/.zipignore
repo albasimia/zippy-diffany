@@ -1,0 +1,5 @@
+
+# コメント行
+*.log
+build/
+!keep.log

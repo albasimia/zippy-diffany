@@ -1,9 +1,7 @@
 {
-  "name": "zippy-diffany-monorepo",
+  "name": "zippy-diffany",
   "private": true,
   "workspaces": [
-    "packages/cli",
-    "packages/app",
-    "packages/lib"
+    "packages/*"
   ]
 }

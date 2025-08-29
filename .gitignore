@@ -58,3 +58,11 @@ packages/app/*.dmg
 .env.development.local
 .env.test.local
 .env.production.local
+
+# node
+node_modules/
+.pnpm-store/
+
+dist/
+build/
+out/

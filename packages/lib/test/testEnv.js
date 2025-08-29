@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import path from 'path';
 
 // .env.test を読み込む
-config({ path: path.resolve('./test/.env.test') });
+config({ path: path.resolve('/.env.test.local') });
 
 // 環境変数をエクスポート
 export const TEST_REPO_PATH = process.env.TEST_REPO_PATH;
