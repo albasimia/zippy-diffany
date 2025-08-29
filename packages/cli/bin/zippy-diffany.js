@@ -1,40 +1,100 @@
 #!/usr/bin/env node
+
+import { Command } from 'commander';
 import path from 'path';
 import fs from 'fs-extra';
-import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import open from 'open'; // `--open` 用
+
 import { getDiffFiles } from '../../lib/git-service/getDiffFiles.js';
 import { createZipFromDiff } from '../../lib/zip-service/createZipFromDiff.js';
 import { filterWithZipIgnore } from '../../lib/zip-service/filterWithZipIgnore.js';
 
-// __dirname polyfill (ESM)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
 
-// .env.test.local をルートから読み込み
-dotenv.config({ path: path.resolve(__dirname, '../../../.env.test.local') });
+const program = new Command();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// 環境変数から読み込む（仮：あとでCLI引数に変更可）
-const repoPath = process.env.TEST_REPO_PATH;
-const commit1 = process.env.COMMIT_1;
-const commit2 = process.env.COMMIT_2;
 
-const zipIgnorePath = path.join(repoPath, '.zipignore');
-const outputZip = path.join(process.cwd(), 'zippy-output.zip');
+program
+  .name('zippy-diffany')
+  .description('🧩 Git差分からZIPファイルを生成するツール')
+  .version(version, '-v, --version', 'バージョンを表示');
 
-(async () => {
-  try {
-    console.log('📄 差分を抽出中...');
-    const allDiffFiles = await getDiffFiles(repoPath, commit1, commit2);
+program
+  .argument('<commit1>', '比較元のコミットID（またはブランチ）')
+  .argument('[commit2]', '比較先のコミットID（またはブランチ）', 'HEAD')
+  .option('--repo <path>', 'Gitリポジトリのルートパス（指定がない場合はカレント）')
+  .option('--out <path>', 'ZIPの出力パス（指定がない場合はカレントに生成）')
+  .option('--name <name>', 'ZIPファイル名（デフォルトはリポジトリ名と同じ）')
+  .option('--zipignore <path>', '.zipignoreのパス（指定がない場合はリポジトリ直下を探索）')
+  .option('--dry-run', 'ZIPを作成せず、差分ファイルの一覧のみ表示')
+  .option('--log, -l', '詳細ログを表示')
+  .option('--progress', '進捗を表示（%）', true)
+  .option('--no-ignore', '.zipignoreを無視')
+  .option('--include-deleted', '削除ファイルも含める')
+  .option('--open', 'ZIP生成後にフォルダを開く')
+  .option('--force, -f', '既存のZIPを上書き')
+  .action(async (commit1, commit2, options) => {
+    const repoPath = options.repo ? path.resolve(options.repo) : process.cwd();
+    const zipIgnorePath = options.zipignore || path.join(repoPath, '.zipignore');
 
-    console.log('🧹 .zipignore を適用中...');
-    const filtered = filterWithZipIgnore(allDiffFiles, zipIgnorePath);
+    const outputName = options.name || path.basename(repoPath);
+    const outputPath = options.out || process.cwd();
+    const outputZipPath = path.join(outputPath, `${outputName}.zip`);
 
-    console.log('📦 ZIP作成中...');
-    await createZipFromDiff(repoPath, filtered, outputZip);
+    const diffFilter = options.includeDeleted ? 'ACMRT' : 'ACMR';
 
-    console.log(`✅ ZIPファイルを生成しました: ${outputZip}`);
-  } catch (err) {
-    console.error('❌ エラー:', err);
-  }
-})();
+    try {
+      const diffFiles = await getDiffFiles(repoPath, commit1, commit2, diffFilter);
+      const filteredFiles = options.ignore === false
+        ? diffFiles
+        : filterWithZipIgnore(diffFiles, zipIgnorePath);
+
+      if (options.log) {
+        console.log('差分ファイル一覧:');
+        console.log(filteredFiles.join('\n'));
+      }
+
+      if (options.dryRun) {
+        console.log('※ dry-run モードのためZIPは生成されません');
+        return;
+      }
+
+      if (!options.force && fs.existsSync(outputZipPath)) {
+        const confirm = await askYesNo(`すでに ${outputZipPath} が存在します。上書きしますか？ [y/N]: `);
+        if (!confirm) return;
+      }
+
+      if (options.progress) console.log('📦 ZIP生成中...');
+
+      await createZipFromDiff(repoPath, filteredFiles, outputZipPath);
+
+      console.log(`✅ ZIP生成完了: ${outputZipPath}`);
+
+      if (options.open) {
+        open(outputPath);
+      }
+
+    } catch (err) {
+      console.error('❌ エラー:', err.message);
+    }
+  });
+
+program.parse();
+
+
+// 簡易的な yes/no 入力確認（必要に応じてreadline-syncなどに置換可）
+function askYesNo(message) {
+  return new Promise((resolve) => {
+    process.stdout.write(message);
+    process.stdin.setEncoding('utf8');
+    process.stdin.once('data', (data) => {
+      const input = data.trim().toLowerCase();
+      process.stdin.destroy();
+      resolve(input === 'y' || input === 'yes');
+    });
+  });
+}

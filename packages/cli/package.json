@@ -20,6 +20,8 @@
   "license": "MIT",
   "dependencies": {
     "@zippy-diffany/lib": "^0.1.0",
-    "minimist": "^1.2.8"
+    "commander": "^14.0.0",
+    "minimist": "^1.2.8",
+    "open": "^10.2.0"
   }
 }
